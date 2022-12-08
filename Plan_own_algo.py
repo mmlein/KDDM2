@@ -6,10 +6,10 @@ import math
 # Pseudo Code Simulated Annealing
 def Simulated_Annealing():
     x = Generate_Initial_Solution()
-    score_x = Get_Score(x)
+    score_x = Get_Overall_Score(x)
     while Termination_Criterion_Met == False:
         x_n = Find_Random_Neighbor(x)
-        score_n_x = Get_Score(x_n)
+        score_n_x = Get_Overall_Score(x_n)
         if score_n_x > score_x:
             x = x_n
             score_x = score_n_x
@@ -155,7 +155,7 @@ def Get_Feature_Factor(feature: str, dataset: pd.DataFrame, lower_limit: float, 
         bin: binary variable, whether data for feature falls into specified range
     """
 
-def Get_Score(features_list: list, dataset: pd.DataFrame, lower_limit: float, upper_limit: float, 
+def Get_Score_Datapoint(features_list: list, dataset: pd.DataFrame, lower_limit: float, upper_limit: float, 
               weights: pd.DataFrame) -> int:
     """
     Calculates the score for one datapoint
@@ -176,6 +176,32 @@ def Get_Score(features_list: list, dataset: pd.DataFrame, lower_limit: float, up
         score += weights[feature] * factor
 
     return score
+
+def Get_Overall_Score(dataset: pd.DataFrame, weights: pd.DataFrame, lower_limit: float, 
+                      upper_limit: float) -> float:
+    """
+    Calculates the score for one datapoint
+    
+    Args:
+        dataset (pd.DataFrame): dataset containing the values for all features for all datapoints
+        weights (pd.DataFrame): weights for each feature
+        lower_limit (float): lower limit of range
+        upper_limit (float): upper limit of range
+        weights (pd.DataFrame): weights for each feature
+
+    Returns:
+        float: overall score for new solution
+    """
+    scores = dict()
+    feature_names = list(dataset.columns)
+    overall_score = 0
+    for i in range(len(dataset)):
+        datapoint = dataset.loc[i]
+        scores[i] = Get_Score_Datapoint(feature_names, datapoint, lower_limit, upper_limit, weights)
+
+    #Maximize Difference
+
+    return overall_score
 
 def Update_Temperature(Temperature: float, Alpha: float = 0.9) -> float:
     """
