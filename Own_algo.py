@@ -2,30 +2,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import random
 import math
-
-# Pseudo Code Simulated Annealing
-def Simulated_Annealing(dataset):
-    x = Generate_Initial_Solution(dataset)
-    score_x = Get_Scores(x)
-    while Termination_Criterion_Met == False:
-        x_n = Find_Random_Neighbor(x)
-        score_n_x = Get_Scores(x_n)
-        if score_n_x > score_x:
-            x = x_n
-            score_x = score_n_x
-        else:
-            p = random.uniform(0,1)
-            
-            #Temperature is a hyperparameter of Simulated Annealing
-            if p <= math.exp((-abs(score_x - score_n_x)/Temperature)):
-                x = x_n
-                score_x = score_n_x    
-                #the worse the neighboring solution or the higher the temperature, 
-                #the lower the probability for accepting that solution
-        Temperature = Update_Temperature(Temperature)
-        
-    #In the first phase, this algorithm allows for exploration, 
-    #in the second for exploitation
+import string
+import time
 
 def Load_Datafile() -> pd.DataFrame:
     #Status: DONE
@@ -41,11 +19,10 @@ def Load_Datafile() -> pd.DataFrame:
     header = list(range(1, 17))
     header = ["letter"] + header
 
-    letter_df_complete = pd.read_csv("letter-recognition.data", 
+    letter_df_complete = pd.read_csv("Data\letter-recognition.data", 
     sep = ",", 
     names = header)
     return letter_df_complete
-
 
 def Filter_Dataset(letter: str, dataset: pd.DataFrame, test_prob: float = 0.2, 
                    rand_state: int = 0) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -87,14 +64,15 @@ def Generate_Initial_Solution(dataset: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: dataframe containing the initial weights for features
     """
     feature_names = list(dataset.columns)
-    print(feature_names)
-    intial_weights = list(range(1, 17))
-    feature_weights_list = list(zip(feature_names, intial_weights))
+    #print(feature_names)
+    #initial_weights = list(range(1, 17))
+    initial_weights = [10] * 16 
+    feature_weights_list = list(zip(feature_names, initial_weights))
     feature_weights = pd.DataFrame(feature_weights_list, columns=['Feature','Weight'])
     return feature_weights
 
 def Termination_Criterion_Met(temperature, Threshold_temp = 10) -> bool:
-    #Status: Vorerst DONE
+    #Status: DONE
     """
     Returns a boolean to stop the algorithm
     
@@ -125,15 +103,15 @@ def Find_Random_Neighbor(dataset_weights: pd.DataFrame) -> pd.DataFrame:
     """
     new_dataset_weights = dataset_weights.copy()
     
-    random_feature_first = random.randint(1, 17)
-    random_feature_second = random.randint(1,17)
+    random_feature_first = random.randint(1,16)
+    random_feature_second = random.randint(1,16)
 
     weight_feature_first = dataset_weights.loc[(dataset_weights.Feature == random_feature_first),"Weight"]
     weight_feature_second = dataset_weights.loc[(dataset_weights.Feature == random_feature_second),"Weight"]
 
-    if weight_feature_first > 0:
-        weight_feature_first =- 1
-        weight_feature_second =+ 1
+    if int(weight_feature_first) > 0:
+        weight_feature_first -= 1
+        weight_feature_second += 1
 
     new_dataset_weights.loc[(dataset_weights.Feature == random_feature_first), "Weight"] = weight_feature_first
     new_dataset_weights.loc[(dataset_weights.Feature == random_feature_second), "Weight"] = weight_feature_second
@@ -222,15 +200,15 @@ def Get_Maximum_Gap(score_df) -> float:
         float: maximum gap
     """
     score_df = score_df.sort_values(by = ["Total_Score"])
-    print("Score df:", score_df)
+    #print("Score df:", score_df)
 
     score_df["Gap"] = score_df["Total_Score"].diff()
     max_gap = score_df["Gap"].max()
 
     occ = score_df['Gap'].value_counts()[max_gap]
-    print("Occurence: ", occ)
+    #print("Occurence: ", occ)
 
-    return max_gap
+    return max_gap, score_df
 
 def Update_Temperature(temperature: float, Alpha: float = 0.9) -> float:
     #Status: DONE
@@ -247,21 +225,118 @@ def Update_Temperature(temperature: float, Alpha: float = 0.9) -> float:
     temperature *= Alpha
     return temperature
 
+def Simulated_Annealing(dataset: pd.DataFrame, letter_bin_df: pd.DataFrame,
+    Initial_Temperature: float = 100, Alpha: float = 0.9, Counter: int = 1000):
+    print("Start Simulated Annealing")
+    weights = Generate_Initial_Solution(dataset)
+    score_weights = Get_Scores(letter_bin_df, weights)
+    gap_weights, score_weights = Get_Maximum_Gap(score_weights)
+    temperature = Initial_Temperature
+    stop_sim_ann = False
 
-dataset_trial = Load_Datafile()
-dataset_D_full, dataset_D_train, dataset_D_test = Filter_Dataset("D", dataset_trial)
-#print(dataset_D_train)
+    while stop_sim_ann == False:
+        for c in range(0, Counter):
+            weights_n = Find_Random_Neighbor(weights)
+            score_n_weights = Get_Scores(letter_bin_df, weights_n)
+            gap_n_weights, score_n_weights = Get_Maximum_Gap(score_n_weights)
+            if gap_n_weights > gap_weights:
+                weights = weights_n
+                gap_weights = gap_n_weights
+            else:
+                p = random.uniform(0,1)
+                if p <= math.exp((-abs(gap_weights - gap_n_weights)/temperature)):
+                    weights = weights_n
+                    gap_weights = gap_n_weights 
 
-limits_df = Get_Limits(dataset_D_train)
-print("Limits: ", limits_df)
+        temperature = Update_Temperature(temperature, Alpha)
+        stop_sim_ann = Termination_Criterion_Met(temperature)
 
-bin_pan = Get_Feature_Factor(dataset_D_train, limits_df)
-print("Binary df: ", bin_pan)
+    
+    return weights, gap_weights
 
-initial_weights = Generate_Initial_Solution(dataset_D_train)
-print("Weights:", initial_weights)
-scores_prel = Get_Scores(bin_pan, initial_weights)
-print("Scores:", scores_prel)
+def Get_In_Outliers_Train(score_df: pd.DataFrame):
+    """
+    Determines in- and outliers
+    
+    Args:
+        scores (pd.DataFrame): dataset containing the scores for all datapoints
+        max gap (float): maximum gap
 
-gap = Get_Maximum_Gap(scores_prel)
-print(gap)
+    Returns:
+        pd.DataFrame: DataFrame containing information regarding in- and outliers
+        float: percentage of outliers
+    """
+    score_df = score_df.sort_values(by = ["Total_Score"])
+    score_df["Gap"] = score_df["Total_Score"].diff()
+    idx_max_gap = score_df["Gap"].idxmax()
+    score_at_max_gap = score_df.loc[idx_max_gap, "Total_Score"]
+    datapoints_lower_score = len(score_df[score_df["Total_Score"] < score_at_max_gap])
+    datapoints_upper_score = len(score_df[score_df["Total_Score"] >= score_at_max_gap])
+    #datapoints_lower_score = score_df.loc[(score_df.Total_Score < score_at_max_gap), :].count()
+    #datapoints_upper_score = score_df.loc[(score_df.Total_Score >= score_at_max_gap), :].count()
+
+    score_df["Class"] = 0
+
+    if datapoints_lower_score > datapoints_upper_score:
+        score_df.loc[(score_df.Total_Score >= score_at_max_gap), "Class"] = 1
+        inlier_up = True
+    else:
+        score_df.loc[(score_df.Total_Score < score_at_max_gap), "Class"] = 1
+        inlier_up = False
+
+    perc_outliers = score_df["Class"].sum()/len(score_df)
+
+    return score_df, perc_outliers, score_at_max_gap, inlier_up
+
+def Get_In_Outliers_Test(score_df: pd.DataFrame, threshold_score: float, inlier_up: bool):
+    
+    score_df["Class"] = 0
+
+    if inlier_up == True:
+        score_df.loc[(score_df.Total_Score >= threshold_score), "Class"] = 1
+    else:
+        score_df.loc[(score_df.Total_Score < threshold_score), "Class"] = 1
+
+    perc_outliers = score_df["Class"].sum()/len(score_df)
+
+    return score_df, perc_outliers
+
+def main():
+    startTime = time.time()
+    df_complete = Load_Datafile()
+    alphabet = list(string.ascii_uppercase)
+    results = pd.DataFrame(columns = ['letter', 'outlier'])
+    results['letter'] = alphabet
+
+    for letter in alphabet:
+        print("Letter: ", letter)
+        #Train weights with training dataset
+        dataset_letter, letter_train, letter_test = Filter_Dataset(letter, df_complete)
+        limits_letter = Get_Limits(letter_train, 0)
+        letter_bin_df = Get_Feature_Factor(letter_train, limits_letter)
+        best_weights, best_gap = Simulated_Annealing(letter_train, letter_bin_df, 100, 0.8, 10)
+        print(best_weights, best_gap)
+
+        train_scores = Get_Scores(letter_bin_df, best_weights)
+        train_scores, perc_train, score_gap, inlier = Get_In_Outliers_Train(train_scores)
+
+        #Get number of outliers with testing dataset
+        limits_letter_test = Get_Limits(letter_test, 0)
+        letter_bin_df_test = Get_Feature_Factor(letter_test, limits_letter_test)
+        test_scores = Get_Scores(letter_bin_df_test, best_weights)
+        alloc_test, perc_test = Get_In_Outliers_Test(test_scores, score_gap, inlier)
+
+        #print(perc_test)
+        results.loc[(results.letter == letter), 'outlier'] = perc_test
+        print("----------------------------------------------------------------\n")
+
+    executionTime = (time.time() - startTime)
+    print('Execution time in seconds: ' + str(executionTime))
+    print(results)
+
+main()
+
+#IQR
+#Start temperature
+#Alpha
+#Counter
