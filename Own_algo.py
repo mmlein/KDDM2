@@ -405,15 +405,10 @@ def Algorithm(IQR_F: float = 0.0, Init_T: float = 100, A: float = 0.9, Count: in
     print('Execution time in seconds: ' + str(executionTime))
     exsheet_name = str(IQR_F) + "_" + str(Init_T) + "_" + str(A) + "_" + str(Count)
     print(results)
-    with pd.ExcelWriter('Data\Results.xlsx', mode = 'a') as writer:
+    with pd.ExcelWriter('Data\Excel_Results.xlsx', mode = 'a') as writer:
         results.to_excel(writer, sheet_name=exsheet_name)
 
 def main():
-    #IQR_Vec = [0.5, 1, 1.5]
-    #Init_T_Vec = [100, 500, 1000]
-    #A_Vec = [0.8, 0.9, 0.95, 0.99]
-    #Count_Vec = [100, 1000]
-
     IQR_Vec = [0.5]
     Init_T_Vec = [100]
     A_Vec = [0.8]
