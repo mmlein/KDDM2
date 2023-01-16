@@ -26,9 +26,9 @@ columns = {"letter": "capital letter	(26 values from A to Z)", "x-box": "horizon
            "x-ege": "mean edge count left to right (integer)", "xegvy": "correlation of x-ege with y	(integer)",
            "y-ege": "ean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x	(integer)"}
 
-
 path = Path("../../Data/letter-recognition.data")
-outlier_path = Path("Data/dataframe.csv").absolute()
+outlier_path = Path(
+    "Data/dataframe_with_outliers_3std_12_5%.csv").absolute()
 
 # get the whole alphabet
 alphabet = list(string.ascii_uppercase)
@@ -100,95 +100,92 @@ print(columns)
 optimization_results = pd.DataFrame(columns=columns)
 optimization_results
 
-extent = 3
-n = 15
-value = 0.9
+extent = 2
+n = 10
+value = 0.8
 
-### Algorithm
+# Algorithm
 
-outliers = 0
-row = {"e": extent, "n": n, "%": value}  # the row which should be added
 
-print(
-    f"Results for extent = {extent}, n_neighbors= {n} and critical value = {value}")
-for letter, dataframe in dataframes.items():
-    # print(dataframe.isnull().sum())
-    dataframe = dataframe.astype(float)
-    m = loop.LocalOutlierProbability(
-        dataframe).fit()
-    # get the probabilities per feature
-    scores = list(m.local_outlier_probabilities)
-    part_outlier_number = 0
-    for score in scores:
-        if score >= value:  # consider it as an outlier, when score > critical value
-            part_outlier_number += 1
-    # add the outlier of a part-dataframe to the total outlier number
-    outliers += part_outlier_number
-    # calculate the percentage of outliers for the letter and add it to the row
-    percentage = part_outlier_number/len(dataframe.index)
-    row[letter] = percentage
-    print(f"{letter}: {percentage}")
+def algorithm(dataframes, extent, n, value):
 
-# add the percentage of total outliers to the row
-row["sum"] = outliers/amount
-print(outliers/amount)
+    outliers = 0
+    row = {"e": extent, "n": n, "%": value}  # the row which should be added
 
-optimization_results = optimization_results.append(
-    row, ignore_index=True)  # insert the row to the dataframe
-print(optimization_results)
+    print(
+        f"Results for extent = {extent}, n_neighbors= {n} and critical value = {value}")
+    for letter, dataframe in dataframes.items():
+        # print(dataframe.isnull().sum())
+        dataframe = dataframe.astype(float)
+        m = loop.LocalOutlierProbability(
+            dataframe, n_neighbors=n, extent=extent).fit()
+        # get the probabilities per feature
+        scores = list(m.local_outlier_probabilities)
+        part_outlier_number = 0
+        for score in scores:
+            if score >= value:  # consider it as an outlier, when score > critical value
+                part_outlier_number += 1
+        # add the outlier of a part-dataframe to the total outlier number
+        outliers += part_outlier_number
+        # calculate the percentage of outliers for the letter and add it to the row
+        percentage = part_outlier_number/len(dataframe.index)
+        row[letter] = percentage
+        print(f"{letter}: {percentage}")
 
+    # add the percentage of total outliers to the row
+    row["sum"] = outliers/amount
+    print(f"Overall Result: {outliers/amount}")
+
+    optimization_results = optimization_results.append(
+        row, ignore_index=True)  # insert the row to the dataframe
+    print(optimization_results)
+    return optimization_results
 
 
 # Hypter-parameter testing
 
 # In[12]:
 
-"""
-for extent in extents:  # hyper parameter 1
-    for n in n_neighbors:  # hyper parameter 2
-        for value in critical_values:  # hyper parameter 3
-            outliers = 0
-            row = {"e": extent, "n": n, "%": value}  # the row which should be added
+def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
 
-            print(
-                f"Results for extent = {extent}, n_neighbors= {n} and critical value = {value}")
-            for letter, dataframe in dataframes.items():
-                print(f"{letter} inserted")
-                m = loop.LocalOutlierProbability(
-                    dataframe, extent=extent, n_neighbors=n).fit()
-                # get the probabilities per feature
-                scores = list(m.local_outlier_probabilities)
-                part_outlier_number = 0
-                for score in scores:
-                    if score >= value:  # consider it as an outlier, when score > critical value
-                        part_outlier_number += 1
-                # add the outlier of a part-dataframe to the total outlier number
-                outliers += part_outlier_number
-                # calculate the percentage of outliers for the letter and add it to the row
-                row[letter] = part_outlier_number/len(dataframe.index)
+    for extent in extents:  # hyper parameter 1
+        for n in n_neighbors:  # hyper parameter 2
+            for value in critical_values:  # hyper parameter 3
+                outliers = 0
+                # the row which should be added
+                row = {"e": extent, "n": n, "%": value}
 
-            # add the percentage of total outliers to the row
-            row["sum"] = outliers/amount
+                print(
+                    f"Results for extent = {extent}, n_neighbors= {n} and critical value = {value}")
+                for letter, dataframe in dataframes.items():
+                    print(f"{letter} inserted")
+                    m = loop.LocalOutlierProbability(
+                        dataframe, extent=extent, n_neighbors=n).fit()
+                    # get the probabilities per feature
+                    scores = list(m.local_outlier_probabilities)
+                    part_outlier_number = 0
+                    for score in scores:
+                        if score >= value:  # consider it as an outlier, when score > critical value
+                            part_outlier_number += 1
+                    # add the outlier of a part-dataframe to the total outlier number
+                    outliers += part_outlier_number
+                    # calculate the percentage of outliers for the letter and add it to the row
+                    row[letter] = part_outlier_number/len(dataframe.index)
 
-            optimization_results = optimization_results.append(
-                row, ignore_index=True)  # insert the row to the dataframe
-            print(optimization_results)
-"""
+                # add the percentage of total outliers to the row
+                row["sum"] = outliers/amount
+
+                optimization_results = optimization_results.append(
+                    row, ignore_index=True)  # insert the row to the dataframe
+    # print(optimization_results)
+    return optimization_results
+
 
 # Results
 
-# In[13]:
-
-
-optimization_results
-
-
-# In[16]:
-
-
 # save the result in a csv file to continue working later
 optimization_results.to_csv(
-    "local_outlier_probability_hyper_parameter_testing_test.csv")
+    "local_outlier_probability_hyper_parameter_tuning_with_outlier.csv")
 
 
 # Plotting
