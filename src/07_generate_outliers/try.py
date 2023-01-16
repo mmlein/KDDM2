@@ -15,8 +15,7 @@ columns = {"letter": "capital letter (26 values from A to Z)", "x-box": "horizon
            "y-ege": "mean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x (integer)"}
 
 
-path = Path(
-    "C:/Users/dt/Documents/CodingProjects/kddm2/Data/letter-recognition.data")
+path = Path("Data/letter-recognition.data").absolute()
 
 # get the whole alphabet
 alphabet = list(string.ascii_uppercase)
@@ -31,7 +30,7 @@ sum = 0
 # fill dict with letter as key and filtered dataframe per letter and get the number of all entries
 for letter in alphabet:
     df = df_letters.loc[(df_letters.letter == letter), :]
-    df = df.drop('letter', axis=1, inplace=False)
+    #df = df.drop('letter', axis=1, inplace=False)
     sum += len(df.index)
     print(letter, len(df.index))
     dataframes[letter] = df
@@ -50,7 +49,7 @@ for letter, dataframe in dataframes.items():
     amount = int(len(dataframe.index)/16)
     st_div = pd.DataFrame(dataframe.std())
     st_div.columns = ["Std"]
-    st_div["std*0.5"] = st_div["Std"] * 0.5
+    st_div["std*0.75"] = st_div["Std"] * 0.75
 
     for column in columns[1:]:
         outliers += amount
@@ -74,3 +73,5 @@ print(
     f"percentage of outliers general {outliers/len(outlier_dataframe.index)*100}%")
 
 print(outlier_dataframe)
+
+outlier_dataframe.to_csv("C:/Users/Dani/Documents/temp/kddm2/Data/dataframe_with_outliers_0_75.csv")
