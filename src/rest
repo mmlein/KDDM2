@@ -1,0 +1,26 @@
+path = "C:/Users/Dani/Documents/temp/kddm2/Data/dataframe_with_outliers_3std_15.6%.csv"
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_csv(path, names = range(0, 19))
+df = df[df.columns[1:17]]
+df
+
+
+# In[35]:
+
+
+# Basic correlogram
+for letter in alphabet:
+    print(letter)
+    sns.pairplot(df.loc[df[1]==letter, :])
+    plt.show()
+
+
+# In[24]:
+
+
+1/6
+
+
+# In[ ]:
