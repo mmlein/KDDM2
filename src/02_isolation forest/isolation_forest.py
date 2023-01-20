@@ -142,7 +142,7 @@ def algorithm(dataset_complete: pd.DataFrame, cont: float = 0.05, max_feat: int 
 
         # Perform the isolation forest
         data_letter, letter_train, letter_test = prepare_dataset(
-            letter, dataset_complete)
+            letter, dataset_complete, test_prob=0.2)
         iso_for, y_train, y_test = isolation_forest(letter_train, letter_test, cont, max_feat,
                                                     max_samp, n_est, random_state)
         threshold_outlier = iso_for.threshold_
