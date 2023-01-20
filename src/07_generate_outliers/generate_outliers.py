@@ -55,15 +55,23 @@ outliers = 0
 
 dataframes_with_outliers = []
 
+outlier_std = 3
+
+outliers_dict = {}
+
 for letter, dataframe in dataframes.items():
+    part_outliers = 0
     original_dataframe = dataframe.copy()
     indexes = list(dataframe.index)
-    amount = int(len(dataframe.index)/48)
+    len_dataframe = len(dataframe.index)
+    amount = int(len_dataframe/16*0.05)
     st_div = pd.DataFrame(dataframe.std())
     st_div.columns = ["Std"]
-    st_div["factor"] = st_div["Std"] * 5
+    st_div["factor"] = st_div["Std"] * outlier_std
+    dataframe["outlier"] = 0
 
     for column in columns[1:]:
+        part_outliers += amount
         outliers += amount
         addition = random.sample(decision, 1)
         indexes_to_use = random.sample(indexes, amount)
@@ -76,17 +84,28 @@ for letter, dataframe in dataframes.items():
             dataframe.loc[indexes_to_use, column] = dataframe.loc[indexes_to_use,
                                                                   column] - st_div.loc[column, "factor"]
         print(dataframe.loc[indexes_to_use, column])
+        dataframe.loc[indexes_to_use, "outlier"] = 1
         indexes = [ele for ele in indexes if ele not in indexes_to_use]
         # inspection(original_dataframe[column])
         # inspection(dataframe[column])
+    outliers_dict[letter] = part_outliers/len_dataframe
     dataframes_with_outliers.append(dataframe)
     #dataframes_with_outliers.append(pd.concat([dataframe, original_dataframe]))
 
 outlier_dataframe = pd.concat(dataframes_with_outliers)
 
-print(
-    f"percentage of outliers general {outliers/len(outlier_dataframe.index)*100}%")
+outliers_dict["sum"] = outliers/len(outlier_dataframe.index)
+percentage_of_outlier = outliers/len(outlier_dataframe.index)*100
 
+print(
+    f"percentage of outliers general {percentage_of_outlier}%")
+
+print(outliers_dict)
 print(outlier_dataframe)
 
-outlier_dataframe.to_csv("Data/dataframe_with_outliers_5std_12,5%.csv")
+solution = pd.DataFrame.from_dict(outliers_dict, orient='index')
+
+solution.to_csv(f"Data/solution_{outlier_std}std_{percentage_of_outlier}%.csv")
+
+outlier_dataframe.to_csv(
+    f"Data/dataframe_with_outliers_{outlier_std}std_{percentage_of_outlier}%.csv")
