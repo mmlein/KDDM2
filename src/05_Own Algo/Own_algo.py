@@ -17,7 +17,7 @@ def Load_Datafile() -> pd.DataFrame:
         pd.DataFrame: Named dataframe with data from .data.
     """
     header = list(range(1, 17))
-    header = ["letter"] + header
+    header = ["letter"] + header + ["outlier"]
 
     letter_df_complete = pd.read_csv("Data\dataframe_with_outliers_3std_4.16%.csv",
                                      sep=",",
@@ -393,7 +393,8 @@ def Algorithm(combinations):
 
     # Load the datafile
     df_complete = Load_Datafile()
-    rows_complete = len(df_complete.index)
+    df_without_outliers = df_complete.copy().iloc[:, 0:16]
+    rows_complete = len(df_without_outliers.index)
 
     # Create dataframe for results
     alphabet = list(string.ascii_uppercase)
@@ -417,7 +418,7 @@ def Algorithm(combinations):
 
             # Train weights with training dataset
             dataset_letter, letter_train, letter_test = Filter_Dataset(
-                letter, df_complete)
+                letter, df_without_outliers)
             limits_letter = Get_Limits(letter_train, IQR_F)
             letter_bin_df = Get_Feature_Factor(letter_train, limits_letter)
             best_weights, best_gap = Simulated_Annealing(letter_train, letter_bin_df,
@@ -452,7 +453,7 @@ def Algorithm(combinations):
     exsheet_name = str(IQR_F) + "_" + str(Init_T) + \
         "_" + str(A) + "_" + str(Count)
     print(results)
-    return results
+    return alloc_test, results
     # with pd.ExcelWriter('Data\Results.xlsx', mode='a') as writer:
     #    results.to_excel(writer, sheet_name=exsheet_name)
 

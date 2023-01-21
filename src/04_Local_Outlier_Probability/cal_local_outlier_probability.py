@@ -4,10 +4,7 @@ from pathlib import Path
 from PyNomaly import loop
 import matplotlib.pyplot as plt
 import string
-
-
-# Reading the data and get an overview
-
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 
 # column names to get a data overview
 columns = {"letter": "capital letter	(26 values from A to Z)", "x-box": "horizontal position of box(integer)",
@@ -16,7 +13,7 @@ columns = {"letter": "capital letter	(26 values from A to Z)", "x-box": "horizon
            "y-bar": "mean y of on pixels in box(integer)", "x2bar": "mean x variance(integer)", "y2bar": "mean y variance	(integer)",
            "xybar": "mean x y correlation	(integer)", "x2ybr": "mean of x * x * y	(integer)", "xy2br": "mean of x * y * y (integer)",
            "x-ege": "mean edge count left to right (integer)", "xegvy": "correlation of x-ege with y	(integer)",
-           "y-ege": "ean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x	(integer)"}
+           "y-ege": "ean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x	(integer)", "outlier": "class	(integer)"}
 
 path = Path("../../Data/letter-recognition.data")
 outlier_path = Path(
@@ -29,22 +26,11 @@ alphabet = list(string.ascii_uppercase)
 df_letters = pd.read_csv(outlier_path, names=list(columns.keys()))
 
 dataframes = dict()
-
-
-# In[8]:
-
-
-df_letters.head(2)
-
-
-# In[13]:
-
-
 sum = 0
 
 # fill dict with letter as key and filtered dataframe per letter and get the number of all entries
 for letter in alphabet:
-    df = df_letters.loc[(df_letters.letter == letter), :]
+    df = df_letters.loc[df_letters.letter == letter, :]
     df = df.drop('letter', axis=1, inplace=False)
     sum += len(df.index)
     print(letter, len(df.index))
@@ -52,27 +38,14 @@ for letter in alphabet:
 
 print(sum)
 
-
-# In[5]:
-
-
 # get a quality check for the amount of entries
 amount = len(df_letters.index)
-amount
-
-
-# In[6]:
-
+print(amount)
 
 # get the means for each letter per column
 means = df_letters.groupby("letter").mean()
 print(df_letters)
 
-
-# Prepare for Hyperparameter testing
-
-
-# Algorithm
 
 def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
     columns = ["e", "n", "%"]
@@ -81,9 +54,14 @@ def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
     print(columns)
     optimization_results = pd.DataFrame(columns=columns)
 
+    results = {}
+
     for extent in extents:  # hyper parameter 1
         for n in n_neighbors:  # hyper parameter 2
             for value in critical_values:  # hyper parameter 3
+                name = f"e={extent},n={n},%={value}"
+                part_result_df = []
+                # total number of outliers
                 outliers = 0
                 # the row which should be added
                 row = {"e": extent, "n": n, "%": value}
@@ -91,39 +69,54 @@ def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
                 print(
                     f"Results for extent = {extent}, n_neighbors= {n} and critical value = {value}")
                 for letter, dataframe in dataframes.items():
+                    if letter == "outlier":
+                        continue
                     # print(dataframe.isnull().sum())
                     dataframe = dataframe.astype(float)
+                    dataframe_for_model = dataframe.iloc[:, 0:15]
                     m = loop.LocalOutlierProbability(
-                        dataframe, n_neighbors=n, extent=extent).fit()
+                        dataframe_for_model, n_neighbors=n, extent=extent).fit()
                     # get the probabilities per feature
                     scores = list(m.local_outlier_probabilities)
                     part_outlier_number = 0
+                    part_outlier_list = []
                     for score in scores:
                         if score >= value:  # consider it as an outlier, when score > critical value
                             part_outlier_number += 1
+                            part_outlier_list.append(1)
+                        else:
+                            part_outlier_list.append(0)
+                    dataframe["projection"] = part_outlier_list  
                     # add the outlier of a part-dataframe to the total outlier number
                     outliers += part_outlier_number
                     # calculate the percentage of outliers for the letter and add it to the row
                     percentage = part_outlier_number/len(dataframe.index)
                     row[letter] = percentage
                     print(f"{letter}: {percentage}")
+                    part_result_df.append(dataframe)
 
                 # add the percentage of total outliers to the row
+                results[name] = pd.concat(part_result_df)
                 row["sum"] = outliers/amount
+                f1_score, accuracy_score, precision_score, recall_score
+                row["f1"] = f1_score(results[name]["outlier"], results[name]["projection"])
+                row["accuracy"] = accuracy_score(results[name]["outlier"], results[name]["projection"])
+                row["precision"] = precision_score(results[name]["outlier"], results[name]["projection"])
+                row["recall"] = recall_score(results[name]["outlier"], results[name]["projection"])
                 print(f"Overall Result: {outliers/amount}")
 
                 optimization_results = optimization_results.append(
                     row, ignore_index=True)  # insert the row to the dataframe
     # print(optimization_results)
-    return optimization_results
+    return results, optimization_results
 
 
 # parameters to diviate
 extents = [2]  # number of standarddivations, the value has to diviate
-#n_neighbors = range(10, 21) 
-n_neighbors = [10] # number of neighbors to consider
+#n_neighbors = range(10, 21)
+n_neighbors = [10]  # number of neighbors to consider
 # citical Local outlier probability - min value to consider as a outlier
-critical_values = np.arange(0.60, 0.71, 0.05)
+critical_values = [0.6]  # np.arange(0.60, 0.71, 0.05)
 ''''
 extent = 2
 n = 10
@@ -131,8 +124,14 @@ value = 0.8
 '''
 
 # Results
-results = hyper_parameter_testing(
+results_val_dict, results_percentage = hyper_parameter_testing(
     dataframes=dataframes, extents=extents, n_neighbors=n_neighbors, critical_values=critical_values)
+
+for name, data in results_val_dict.items():
+    data.to_csv(
+        f"results_lop_val_3std_4,16%_{name}.csv")
+
+
 # save the result in a csv file to continue working later
-results.to_csv(
-    "results_lop_3std_4,16%_06_07.csv")
+results_percentage.to_csv(
+    "results_lop_per_3std_4,16%_06_07.csv")
