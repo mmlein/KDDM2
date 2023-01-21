@@ -9,44 +9,44 @@ import pyod
 from pathlib import Path
 from pyod.models.iforest import IForest
 import string
-import isolation_forest
+from isolation_forest import *
 
 
 path_data = Path(
-    'C:/Users/Dani/Documents/temp/kddm2/Data/dataframe_with_outliers_3std_4.16%.csv')
+    'C:/Users/Florentina\Documents/Uni CSS/3. Semester/kddm2/Data/dataframe_with_outliers_3std_4.16%.csv')
 
 header = list(range(1, 17))
 header = ["letter"] + header
 
 letter_df_complete = pd.read_csv(path_data,
-                                 sep=",",
-                                 names=header)
+                                 sep=",")
 
 hyper_params = {
     'cont': [0.01, 0.05, 0.1],
     'max_feat': [1, 8, 16],
     'max_samp': [10, 50, 100],
     'max_est': [10, 100],
-    'random_state': [0, 5]
+    'random_state': [0]
 }
 
-res_abs, res_rel = isolation_forest.cross_validation(
-    hyper_params, dataset_complete=letter_df_complete)
+res_abs, res_rel = algorithm(letter_df_complete)
 
+
+#res_abs, res_rel = isolation_forest.cross_validation(
+#    hyper_params, dataset_complete=letter_df_complete)
+
+#print(res_abs, res_rel)
 
 # ### Plots
-
-# In[10]:
+"""
 
 
 results = res_rel.copy()
 
 results.loc[:, "A":"Z"] = res_rel.loc[:, "A":"Z"]/100
 results.to_csv(
-    "C:/Users/Dani/Documents/temp/kddm2/Results_Ifor_3std_4,16%.csv")
+    "C:/Users/Florentina/Documents/Uni CSS/3. Semester/Results_ifor/Results_Ifor_3std_4,16%.csv")
 
-
-# In[15]:
 
 
 alphabet = list(string.ascii_uppercase)
@@ -62,18 +62,12 @@ plt.show()
 #sns.kdeplot(res_rel["A"], shade = True)
 
 
-# In[16]:
-
-
 res_abs_plot = pd.DataFrame(columns=["Letter", "Average"])
 res_abs_plot["Letter"] = alphabet
 
 for i in alphabet:
     m = res_abs[i].mean()
     res_abs_plot.loc[(res_abs_plot.Letter == i), 'Average'] = m
-
-
-# In[12]:
 
 
 # Reorder the dataframe
@@ -143,6 +137,4 @@ for bar, angle, height, label in zip(bars, angles, heights, res_abs_plot["Letter
         va='center',
         rotation=rotation,
         rotation_mode="anchor")
-
-
-# In[31]:
+"""
