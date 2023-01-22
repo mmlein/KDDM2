@@ -209,7 +209,7 @@ def algorithm(dataset_complete: pd.DataFrame, cont: float = 0.05, max_feat: int 
     # Write results to csv
     results_fi = results_fi.drop("Anomaly_Score", axis=1)
     if write_to_csv == True:
-        filename = Path("Data/Output_Data/02_Results_Ifor/Ifor_3std_4,16%_{}_{}_{}_{}_{}.csv".format(cont, 
+        filename = Path("Data/Output_Data/02_Results_Ifor/TEST_Ifor_3std_4,16%_{}_{}_{}_{}_{}.csv".format(cont, 
                         max_feat, max_samp, n_est, random_state)).absolute()
         results_fi.to_csv(filename)
     return results_abs, results_rel
@@ -245,8 +245,8 @@ def cross_validation(params: dict, dataset_complete: pd.DataFrame,write_to_csv: 
         results_rel = pd.concat([results_rel, rel], ignore_index=True)
 
     if write_to_csv == True:
-        path_abs = Path("Data/Output_Data/02_Results_Ifor/Ifor_abs.csv").absolute()
-        path_rel = Path("Data/Output_Data/02_Results_Ifor/Ifor_rel.csv").absolute()
+        path_abs = Path("Data/Output_Data/02_Results_Ifor/TEST_Ifor_abs.csv").absolute()
+        path_rel = Path("Data/Output_Data/02_Results_Ifor/TEST_Ifor_rel.csv").absolute()
         results_abs.to_csv(path_abs)
         results_rel.to_csv(path_rel)
 
@@ -261,7 +261,7 @@ def main():
         'max_est': [10, 100],
         'random_state': [0]}
 
-    res_abs, res_rel = cross_validation(hyper_params, letter_df_complete, False)
+    res_abs, res_rel = cross_validation(hyper_params, letter_df_complete, True)
 
 
 main()

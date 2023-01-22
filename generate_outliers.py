@@ -105,4 +105,4 @@ solution = pd.DataFrame.from_dict(outliers_dict, orient='index')
 solution.to_csv(f"Data/Output_Data/TEST_solution_{outlier_std}std_{percentage_of_outlier}%.csv")
 
 outlier_dataframe.to_csv(
-    f"Data/Output_Data_Data/TEST_dataframe_with_outliers_{outlier_std}std_{percentage_of_outlier}%.csv")
+    f"Data/Output_Data/TEST_dataframe_with_outliers_{outlier_std}std_{percentage_of_outlier}%.csv")
