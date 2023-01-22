@@ -16,7 +16,7 @@ columns = {"letter": "capital letter	(26 values from A to Z)", "x-box": "horizon
            "y-ege": "ean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x	(integer)", "outlier": "class	(integer)"}
 
 path = Path("Data/Input_Data/letter-recognition.data")
-outlier_path = Path("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
+outlier_path = Path("../../Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
 
 # get the whole alphabet
 alphabet = list(string.ascii_uppercase)
