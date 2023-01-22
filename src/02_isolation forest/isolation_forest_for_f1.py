@@ -15,17 +15,15 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 import warnings
 warnings.filterwarnings("ignore")
 
-path_data = Path("Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
+path_data = Path("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
 
 columns = ["", "letter", "x-box", "y-box", "width", "high", "onpix", "x-bar", "y-bar", "x2bar",
         "y2bar", "xybar", "x2ybr", "xy2br", "x-ege", "xegvy", "y-ege", "yegvx", "outlier"]
 
 letter_df_complete = pd.read_csv(path_data, names=columns)
 
-#columns = letter_df_complete.columns.values.tolist()
 columns_train = columns[2:-1]
 add_columns = ["Anomaly_Score", "projection"]
-#columns_df_res = columns + add_columns
 columns_df_res = columns + add_columns
 columns_df_res.remove("letter")
 
@@ -69,11 +67,12 @@ def isolation_forest(train_data: pd.DataFrame, test_data: pd.DataFrame, columns:
     Args:
         train_data (pd.DataFrame): dataframe for training.
         test_data (pd.DataFrame): dataframe for testing.
+        columns (list[str]): columns containing the training features.
         cont (float): contamination (estimated % of outliers).
         max_feat (int): features to train the isolation forest.
         max_samp (int): samples to train the isolations forest (impacts the tree size).
         n_est (int): numbers of trees in the ensemble.
-        rand_stat (int): random state.
+        random_stat (int): random state.
 
     Returns:
         pyod.models.iforest: isolation forest.
@@ -100,7 +99,7 @@ def isolation_forest(train_data: pd.DataFrame, test_data: pd.DataFrame, columns:
 
 def categorization(dataset: pd.DataFrame, pred_score: np.ndarray, threshold: float) -> pd.DataFrame:
     """
-    Calculates the statistics (https://towardsdatascience.com/use-the-isolated-forest-with-pyod-3818eea68f08).
+    Categorizes data into outliers and normal data.
 
     Args:
         dataset (pd.DataFrame): (training/testing) dataset.
@@ -108,7 +107,7 @@ def categorization(dataset: pd.DataFrame, pred_score: np.ndarray, threshold: flo
         threshold (float): threshold for classifying a datapoint as an outlier.
 
     Returns:
-        pd.DataFrame: dataframe containinf the statistics.
+        pd.DataFrame: dataframe containing the statistics.
     """
 
     dataset['Anomaly_Score'] = pred_score
@@ -120,15 +119,15 @@ def categorization(dataset: pd.DataFrame, pred_score: np.ndarray, threshold: flo
 
 def descriptive_stat_threshold(dataset: pd.DataFrame) -> tuple[int, int, float]:
     """
-    Calculates the statistics (https://towardsdatascience.com/use-the-isolated-forest-with-pyod-3818eea68f08).
-
+    Determines the number of outliers and the percentage of outliers.
+    
     Args:
         dataset (pd.DataFrame): (training/testing) dataset.
-        pred_score (np.ndarray): predictive scores from the isolation forest.
-        threshold (float): threshold for classifying a datapoint as an outlier.
 
     Returns:
-        pd.DataFrame: dataframe containinf the statistics.
+        int: length of the dataset.
+        int: number of outliers.
+        float: percentage of outliers.
     """
 
     total_datapoints = len(dataset)
@@ -150,7 +149,8 @@ def algorithm(dataset_complete: pd.DataFrame, cont: float = 0.05, max_feat: int 
         max_feat (int): features to train the isolation forest.
         max_samp (int): samples to train the isolations forest (impacts the tree size).
         n_est (int): numbers of trees in the ensemble.
-        rand_state (int): random state.
+        random_state (int): random state.
+        write_to_csv (bool): boolean whether the results should be stored in a csv file.
 
     Returns:
         pd.DataFrame: DataFrame containing the absolute results.
@@ -198,40 +198,35 @@ def algorithm(dataset_complete: pd.DataFrame, cont: float = 0.05, max_feat: int 
     results_fi = results_fi.astype(float)
     results_abs_dict["Total"] = datapoints_total
     results_rel_dict["Total"] = outliers_total/datapoints_total
-    results_rel_dict["f1"] = f1_score(
-        results_fi["outlier"], results_fi["projection"])
-    results_rel_dict["accuracy"] = accuracy_score(
-        results_fi["outlier"], results_fi["projection"])
-    results_rel_dict["precision"] = precision_score(
-        results_fi["outlier"], results_fi["projection"])
-    results_rel_dict["recall"] = recall_score(
-        results_fi["outlier"], results_fi["projection"])
+    results_rel_dict["f1"] = f1_score(results_fi["outlier"], results_fi["projection"])
+    results_rel_dict["accuracy"] = accuracy_score(results_fi["outlier"], results_fi["projection"])
+    results_rel_dict["precision"] = precision_score(results_fi["outlier"], results_fi["projection"])
+    results_rel_dict["recall"] = recall_score(results_fi["outlier"], results_fi["projection"])
     results_abs = pd.DataFrame([results_abs_dict])
     results_rel = pd.DataFrame([results_rel_dict])
 
     # Write results to csv
     results_fi = results_fi.drop("Anomaly_Score", axis=1)
     if write_to_csv == True:
-        filename = Path("Results_ifor/Ifor_3std_4,16%_{}_{}_{}_{}_{}.csv".format(cont, max_feat, max_samp, n_est, random_state)).absolute()
+        filename = Path("Data/Output_Data/02_Results_Ifor/Ifor_3std_4,16%_{}_{}_{}_{}_{}.csv".format(cont, 
+                        max_feat, max_samp, n_est, random_state)).absolute()
         results_fi.to_csv(filename)
     return results_abs, results_rel
 
 
-def cross_validation(params: dict, dataset_complete: pd.DataFrame,
-                     write_to_csv: bool = False,
-                     ) -> tuple[pd.DataFrame,
-                                pd.DataFrame]:
+def cross_validation(params: dict, dataset_complete: pd.DataFrame,write_to_csv: bool = False) -> tuple[pd.DataFrame,
+                                                                                                        pd.DataFrame]:
     """
     Performs cross validation.
 
     Args:
         params (dict): dicitionary containing all hyperparamters.
         dataset_complete (pd.DataFrame): complete dataset.
-        write_to_excel (bool): boolean variable if results should be written to excel.
-        path (str): path of excel file.
+        write_to_csv (bool): boolean whether the results should be stored in a csv file.
 
     Returns:
-        Any.
+        pd.DataFrame: absolute number of outliers.
+        pd.DataFrame: relative number of outliers.
     """
 
     a = params.values()
@@ -249,8 +244,8 @@ def cross_validation(params: dict, dataset_complete: pd.DataFrame,
         results_rel = pd.concat([results_rel, rel], ignore_index=True)
 
     if write_to_csv == True:
-        path_abs = Path("Results_ifor/Ifor_abs.csv").absolute()
-        path_rel = Path("Results_ifor/Ifor_rel.csv").absolute()
+        path_abs = Path("Data/Output_Data/02_Results_Ifor/Ifor_abs.csv").absolute()
+        path_rel = Path("Data/Output_Data/02_Results_Ifor/Ifor_rel.csv").absolute()
         results_abs.to_csv(path_abs)
         results_rel.to_csv(path_rel)
 
@@ -265,7 +260,7 @@ def main():
         'max_est': [10, 100],
         'random_state': [0]}
 
-    res_abs, res_rel = cross_validation(hyper_params, letter_df_complete, True)
+    res_abs, res_rel = cross_validation(hyper_params, letter_df_complete, False)
 
 
 main()
