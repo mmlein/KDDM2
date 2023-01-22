@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import string
 
 
-def plot_results(feature, input_filename, output_filename):
+def plot_results_percentage_bar(feature, input_filename, output_filename):
     optimization_data = pd.read_csv(input_filename)
     result = optimization_data.groupby([feature]).mean().reset_index()
     alphabet = list(string.ascii_uppercase)
@@ -25,9 +25,53 @@ def plot_results(feature, input_filename, output_filename):
     plt.title(f"Effect of {feature}")
     plt.legend()
     plt.grid(color='#DDDDDD', linestyle=':', linewidth=0.5)
-    plt.savefig(output_filename)
+    # plt.savefig(output_filename)
     plt.show()
 
+def plot_results_percentage(feature, input_filename, output_filename):
+    optimization_data = pd.read_csv(input_filename)
+    result = optimization_data.groupby([feature]).mean().reset_index()
+    alphabet = list(string.ascii_uppercase)
+    if "sum" in optimization_data.columns:
+        alphabet.append("sum")
+    fig = plt.figure(figsize=(20, 10))
+
+    for letter in alphabet:
+        if letter == "sum":
+            plt.plot(result[feature], result[letter],
+                     "b-", label=letter, linewidth=3)
+        else:
+            plt.plot(result[feature], result[letter],
+                     ":", label=letter, linewidth=1)
+        plt.title(letter)
+
+    plt.xlabel(feature)
+    plt.ylabel("Percentage of outliers")
+    plt.title(f"Effect of {feature}")
+    plt.legend()
+    plt.grid(color='#DDDDDD', linestyle=':', linewidth=0.5)
+    # plt.savefig(output_filename)
+    plt.show()
+
+
+def plot_results_assessment(dataframe, feature, output_filename):
+    measures = ["accuracy", "recall", "precision",  "f1", ]
+    for measure in measures:
+        result = dataframe.groupby([feature]).mean().reset_index()
+        if measure == "accuracy" or measure == "f1":
+            plt.plot(result[feature], result[measure],
+                     "-", label=measure, linewidth=3)
+        else:
+            plt.plot(result[feature], result[measure],
+                     ":", label=measure, linewidth=1)
+        plt.title(feature)
+    plt.xlabel(feature)
+    plt.ylabel("Measure")
+    plt.title(f"Effect of {feature}")
+    plt.legend()
+    plt.grid(color='#DDDDDD', linestyle=':', linewidth=0.5)
+    # plt.savefig(output_filename)
+    plt.show()
 
 # plot_results("%", "Effect of the %", "Critical Values", "local_outlier_probability_hyper_parameter_tuning_with_outlier_3std_06_07_n10.csv", "local_outlier_probability_hyper_parameter_tuning_with_outlier_2std_0.6.pdf")
 
