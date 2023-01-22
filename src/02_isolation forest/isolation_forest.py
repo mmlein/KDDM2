@@ -20,13 +20,14 @@ path_data = Path("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").absol
 columns = ["", "letter", "x-box", "y-box", "width", "high", "onpix", "x-bar", "y-bar", "x2bar",
         "y2bar", "xybar", "x2ybr", "xy2br", "x-ege", "xegvy", "y-ege", "yegvx", "outlier"]
 
-letter_df_complete = pd.read_csv(path_data, names=columns)
+letter_df_complete = pd.read_csv(path_data)
 
 columns_train = columns[2:-1]
 add_columns = ["Anomaly_Score", "projection"]
 columns_df_res = columns + add_columns
 columns_df_res.remove("letter")
 
+print(letter_df_complete)
 
 def prepare_dataset(letter: str, dataset: pd.DataFrame, test_prob: float = 0.2,
                     rand_state: int = 0) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:

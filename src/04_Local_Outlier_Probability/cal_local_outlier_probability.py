@@ -22,7 +22,8 @@ outlier_path = Path("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").ab
 alphabet = list(string.ascii_uppercase)
 
 # read the data
-df_letters = pd.read_csv(outlier_path, names=list(columns.keys()))
+#df_letters = pd.read_csv(outlier_path, names=list(columns.keys()))
+df_letters = pd.read_csv(outlier_path)
 
 dataframes = dict()
 sum = 0
