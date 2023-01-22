@@ -27,7 +27,7 @@ def inspection(x_data):
     print(np.mean(x_data))
 
 
-path = Path("Data/letter-recognition.data").absolute()
+path = Path("Data/Input_Data/letter-recognition.data").absolute()
 
 # get the whole alphabet
 alphabet = list(string.ascii_uppercase)
@@ -86,11 +86,8 @@ for letter, dataframe in dataframes.items():
         print(dataframe.loc[indexes_to_use, column])
         dataframe.loc[indexes_to_use, "outlier"] = 1
         indexes = [ele for ele in indexes if ele not in indexes_to_use]
-        # inspection(original_dataframe[column])
-        # inspection(dataframe[column])
     outliers_dict[letter] = part_outliers/len_dataframe
     dataframes_with_outliers.append(dataframe)
-    #dataframes_with_outliers.append(pd.concat([dataframe, original_dataframe]))
 
 outlier_dataframe = pd.concat(dataframes_with_outliers)
 
@@ -105,7 +102,7 @@ print(outlier_dataframe)
 
 solution = pd.DataFrame.from_dict(outliers_dict, orient='index')
 
-solution.to_csv(f"Data/solution_{outlier_std}std_{percentage_of_outlier}%.csv")
+solution.to_csv(f"Data/Output_Data/solution_{outlier_std}std_{percentage_of_outlier}%.csv")
 
 outlier_dataframe.to_csv(
-    f"Data/dataframe_with_outliers_{outlier_std}std_{percentage_of_outlier}%.csv")
+    f"Data/Input_Data/dataframe_with_outliers_{outlier_std}std_{percentage_of_outlier}%.csv")

@@ -15,9 +15,8 @@ columns = {"letter": "capital letter	(26 values from A to Z)", "x-box": "horizon
            "x-ege": "mean edge count left to right (integer)", "xegvy": "correlation of x-ege with y	(integer)",
            "y-ege": "ean edge count bottom to top	(integer)", "yegvx": "correlation of y-ege with x	(integer)", "outlier": "class	(integer)"}
 
-path = Path("../../Data/letter-recognition.data")
-outlier_path = Path(
-    "Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
+path = Path("Data/Input_Data/letter-recognition.data")
+outlier_path = Path("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv").absolute()
 
 # get the whole alphabet
 alphabet = list(string.ascii_uppercase)
@@ -110,13 +109,11 @@ def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
 
                 optimization_results = optimization_results.append(
                     row, ignore_index=True)  # insert the row to the dataframe
-    # print(optimization_results)
     return results, optimization_results
 
 
 # parameters to diviate
 extents = [2]  # number of standarddivations, the value has to diviate
-#n_neighbors = range(10, 21)
 n_neighbors = [10]  # number of neighbors to consider
 # citical Local outlier probability - min value to consider as a outlier
 critical_values = [0.6]  # np.arange(0.60, 0.71, 0.05)
@@ -132,9 +129,9 @@ results_val_dict, results_percentage = hyper_parameter_testing(
 
 for name, data in results_val_dict.items():
     data.to_csv(
-        f"results_lop_val_3std_4,16%_{name}.csv")
+        f"Data/Output_Data/04_Local_outlier_prob/results_lop_val_3std_4,16%_{name}.csv")
 
 
 # save the result in a csv file to continue working later
 results_percentage.to_csv(
-    "results_lop_per_3std_4,16%_06_07.csv")
+    "Data/Output_Data/04_Local_outlier_prob/results_lop_per_3std_4,16%_06_07.csv")
