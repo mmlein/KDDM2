@@ -464,7 +464,7 @@ def Algorithm(combinations: list) -> list:
         result_df_val = pd.concat(result_list)
         row["sum"] = outliers/rows_complete
 
-        filename = f"Data/Output_Data/05_Own_algorithm/results_val_own_algo_{IQR_F}_{Init_T}_{A}_{Count}.csv"
+        filename = f"Data/Output_Data/05_Own_algorithm/TEST_results_val_own_algo_{IQR_F}_{Init_T}_{A}_{Count}.csv"
         result_df_val.to_csv(filename)
 
         row["f1"] = f1_score(result_df_val["outlier"],
@@ -513,13 +513,14 @@ def main():
                 for count in Count_Vec_2:
                     combinations.append([iqr, t, a, count])
 
+    #TO BE REMOVED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     combinations = []
     combinations.append([0, 100, 0.8, 10])
 
     results = Algorithm(combinations)
 
     results.to_csv(
-        "Data/Output_Data/05_Own_algorithm/results_per_own_algo_hyper_para_3std_4_16%.csv")
+        "Data/Output_Data/05_Own_algorithm/TEST_results_per_own_algo_hyper_para_3std_4_16%.csv")
 
 
 main()
