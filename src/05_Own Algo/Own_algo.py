@@ -4,6 +4,11 @@ import random
 import math
 import string
 import time
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
+
+'''
+rows = ,letter,x-box,y-box,width,high,onpix,x-bar,y-bar,x2bar,y2bar,xybar,x2ybr,xy2br,x-ege,xegvy,y-ege,yegvx,outlier
+'''
 
 
 def Load_Datafile() -> pd.DataFrame:
@@ -146,9 +151,11 @@ def Get_Limits(dataset: pd.DataFrame, IQR_Factor: float = 0.0) -> pd.DataFrame:
     """
 
     limits = pd.DataFrame(columns=['Feature', 'low_limit', 'up_limit'])
-    limits.loc[:, 'Feature'] = dataset.columns
+    columns = list(dataset.columns)[0:16]
+    limits.loc[:, 'Feature'] = columns
+    dataset = dataset.astype(float)
 
-    for feat in dataset.columns:
+    for feat in columns:
         q1 = dataset[feat].quantile(.25)
         q3 = dataset[feat].quantile(.75)
         IQR = q3 - q1
@@ -172,8 +179,9 @@ def Get_Feature_Factor(dataset: pd.DataFrame, limits: pd.DataFrame) -> pd.DataFr
         pd.DataFrame: dataframe with binary variables for each datapoint and each feature.
     """
     bin_df = dataset.copy()
+    columns = list(bin_df.columns)[0:16]
 
-    for feat in bin_df.columns:
+    for feat in columns:
         # Retrieve the limits
         lower_limit = float(limits.loc[(limits.Feature == feat), "low_limit"])
         upper_limit = float(limits.loc[(limits.Feature == feat), "up_limit"])
@@ -190,15 +198,16 @@ def Get_Scores(bin_df: pd.DataFrame, weights: pd.DataFrame) -> pd.DataFrame:
     Calculates the score for datapoints.
 
     Args:
-        bin_dataframe (pd.DataFrame): dataframe containing binary variables whether a datapoint's value for 
+        bin_dataframe (pd.DataFrame): dataframe containing binary variables whether a datapoint's value for
             a specific feature falls in the range.
         weights (pd.DataFrame): weights for each feature.
 
     Returns:
         pd.DataFrame: total score for datapoints.
     """
+    columns = list(bin_df.columns)[0:16]
     score_df = bin_df.copy()
-    for feat in bin_df.columns:
+    for feat in columns:
         score_df[feat] = score_df[feat].multiply(
             float(weights.loc[(weights.Feature == feat), "Weight"]))
 
@@ -393,7 +402,7 @@ def Algorithm(combinations):
 
     # Load the datafile
     df_complete = Load_Datafile()
-    df_without_outliers = df_complete.copy().iloc[:, 0:16]
+    df_without_outliers = df_complete.copy().iloc[:, 0:17]
     rows_complete = len(df_without_outliers.index)
 
     # Create dataframe for results
@@ -412,15 +421,17 @@ def Algorithm(combinations):
         row = {"IQR": IQR_F, "t": Init_T, "a": A, "Count": Count}
         print(row)
         outliers = 0
+        result_list = []
 
         for letter in alphabet:
             print("Letter: ", letter)
 
             # Train weights with training dataset
             dataset_letter, letter_train, letter_test = Filter_Dataset(
-                letter, df_without_outliers)
+                letter, df_complete)
             limits_letter = Get_Limits(letter_train, IQR_F)
-            letter_bin_df = Get_Feature_Factor(letter_train, limits_letter)
+            letter_bin_df = Get_Feature_Factor(
+                letter_train.iloc[:, 0:16], limits_letter)
             best_weights, best_gap = Simulated_Annealing(letter_train, letter_bin_df,
                                                          Initial_Temperature=Init_T, Alpha=A, Counter=Count)
             print(best_weights, best_gap)
@@ -431,19 +442,36 @@ def Algorithm(combinations):
                 train_scores)
 
             # Get number of outliers with testing dataset
-            #limits_letter_test = Get_Limits(letter_test)
+            # limits_letter_test = Get_Limits(letter_test)
             letter_bin_df_test = Get_Feature_Factor(letter_test, limits_letter)
             test_scores = Get_Scores(letter_bin_df_test, best_weights)
             alloc_test, amount_outliers, perc_test = Get_In_Outliers_Test(
                 test_scores, score_gap, inlier)
+            indexes_alloc_test = list(alloc_test.index.values)
+            result_val = df_complete.loc[indexes_alloc_test, :]
+            result_val["projection"] = alloc_test["Class"]
+            result_list.append(result_val)
 
             # Save results to dataframe
             row[letter] = perc_test
             outliers += amount_outliers
             print(row)
-            #results.loc[(results.letter == letter), new_column] = perc_test
+            # results.loc[(results.letter == letter), new_column] = perc_test
             print("----------------------------------------------------------------\n")
+        result_df_val = pd.concat(result_list)
         row["sum"] = outliers/rows_complete
+
+        filename = f"Results_own_algo/results_val_own_algo_{IQR_F}_{Init_T}_{A}_{Count}.csv"
+        result_df_val.to_csv(filename)
+
+        row["f1"] = f1_score(result_df_val["outlier"],
+                             result_df_val["projection"])
+        row["accuracy"] = accuracy_score(
+            result_df_val["outlier"], result_df_val["projection"])
+        row["precision"] = precision_score(
+            result_df_val["outlier"], result_df_val["projection"])
+        row["recall"] = recall_score(
+            result_df_val["outlier"], result_df_val["projection"])
         results = results.append(row, ignore_index=True)
         print(results)
 
@@ -453,7 +481,7 @@ def Algorithm(combinations):
     exsheet_name = str(IQR_F) + "_" + str(Init_T) + \
         "_" + str(A) + "_" + str(Count)
     print(results)
-    return alloc_test, results
+    return results
     # with pd.ExcelWriter('Data\Results.xlsx', mode='a') as writer:
     #    results.to_excel(writer, sheet_name=exsheet_name)
 
@@ -484,7 +512,8 @@ def main():
 
     results = Algorithm(combinations)
 
-    results.to_csv("results_own_algo_hyper_para_3std_15_6%.csv")
+    results.to_csv(
+        "Results_own_algo/results_per_own_algo_hyper_para_3std_4_16%.csv")
 
 
 main()

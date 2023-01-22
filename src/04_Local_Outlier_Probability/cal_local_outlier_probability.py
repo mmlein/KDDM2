@@ -86,7 +86,7 @@ def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
                             part_outlier_list.append(1)
                         else:
                             part_outlier_list.append(0)
-                    dataframe["projection"] = part_outlier_list  
+                    dataframe["projection"] = part_outlier_list
                     # add the outlier of a part-dataframe to the total outlier number
                     outliers += part_outlier_number
                     # calculate the percentage of outliers for the letter and add it to the row
@@ -98,11 +98,14 @@ def hyper_parameter_testing(dataframes, extents, n_neighbors, critical_values):
                 # add the percentage of total outliers to the row
                 results[name] = pd.concat(part_result_df)
                 row["sum"] = outliers/amount
-                f1_score, accuracy_score, precision_score, recall_score
-                row["f1"] = f1_score(results[name]["outlier"], results[name]["projection"])
-                row["accuracy"] = accuracy_score(results[name]["outlier"], results[name]["projection"])
-                row["precision"] = precision_score(results[name]["outlier"], results[name]["projection"])
-                row["recall"] = recall_score(results[name]["outlier"], results[name]["projection"])
+                row["f1"] = f1_score(
+                    results[name]["outlier"], results[name]["projection"])
+                row["accuracy"] = accuracy_score(
+                    results[name]["outlier"], results[name]["projection"])
+                row["precision"] = precision_score(
+                    results[name]["outlier"], results[name]["projection"])
+                row["recall"] = recall_score(
+                    results[name]["outlier"], results[name]["projection"])
                 print(f"Overall Result: {outliers/amount}")
 
                 optimization_results = optimization_results.append(
