@@ -22,11 +22,13 @@ def Load_Datafile() -> pd.DataFrame:
         pd.DataFrame: Named dataframe with data from .data.
     """
     header = list(range(1, 17))
-    header = ["letter"] + header + ["outlier"]
+    header = ["idx", "letter"] + header + ["outlier"]
 
-    letter_df_complete = pd.read_csv("Data\dataframe_with_outliers_3std_4.16%.csv",
-                                     sep=",",
-                                     names=header)
+    letter_df_complete = pd.read_csv("Data/Input_Data/dataframe_with_outliers_3std_4.16%.csv",
+                                     sep=",")
+
+    letter_df_complete.columns = header
+    letter_df_complete = letter_df_complete.drop('idx', axis=1)
     return letter_df_complete
 
 
@@ -358,15 +360,19 @@ def Get_In_Outliers_Train(score_df: pd.DataFrame) -> tuple[pd.DataFrame, float, 
     return score_df, perc_outliers, score_at_max_gap, inlier_up
 
 
-def Get_In_Outliers_Test(score_df: pd.DataFrame, threshold_score: float, inlier_up: bool) -> tuple[pd.DataFrame, float]:
+def Get_In_Outliers_Test(score_df: pd.DataFrame, threshold_score: float, inlier_up: bool) -> tuple[pd.DataFrame, int, 
+                                                                                                    float]:
     """
     Determines in- and outliers of testing dataset.
 
     Args:
         scores (pd.DataFrame): dataset containing the scores for all datapoints.
+        threshold_score (float): threshold score to split outliers and normal data.
+        inlier_up (bool): boolean whether inlier are above or below the threshold.
 
     Returns:
         pd.DataFrame: DataFrame containing information regarding in- and outliers.
+        int: number of outliers.
         float: percentage of outliers.
     """
 
@@ -383,18 +389,15 @@ def Get_In_Outliers_Test(score_df: pd.DataFrame, threshold_score: float, inlier_
     return score_df, outliers_amount, perc_outliers
 
 
-def Algorithm(combinations):
+def Algorithm(combinations: list) -> list:
     """
     Performes Outlier detection.
 
     Args:
-        IQR_F (float): factor to set limits.
-        Init_T (float): starting temperature.
-        A (float): hyperparameter to decrease temperature.
-        Count (int): hyperparameter to decrease temperature.
+        combinations (list): list containing the hyperparameters.
 
     Returns:
-        none
+        list: list containing the results.
     """
 
     # Start the timer
@@ -461,7 +464,7 @@ def Algorithm(combinations):
         result_df_val = pd.concat(result_list)
         row["sum"] = outliers/rows_complete
 
-        filename = f"Results_own_algo/results_val_own_algo_{IQR_F}_{Init_T}_{A}_{Count}.csv"
+        filename = f"Data/Output_Data/05_Own_algorithm/results_val_own_algo_{IQR_F}_{Init_T}_{A}_{Count}.csv"
         result_df_val.to_csv(filename)
 
         row["f1"] = f1_score(result_df_val["outlier"],
@@ -510,10 +513,13 @@ def main():
                 for count in Count_Vec_2:
                     combinations.append([iqr, t, a, count])
 
+    combinations = []
+    combinations.append([0, 100, 0.8, 10])
+
     results = Algorithm(combinations)
 
     results.to_csv(
-        "Results_own_algo/results_per_own_algo_hyper_para_3std_4_16%.csv")
+        "Data/Output_Data/05_Own_algorithm/results_per_own_algo_hyper_para_3std_4_16%.csv")
 
 
 main()
