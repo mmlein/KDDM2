@@ -28,7 +28,7 @@ df_letters = pd.read_csv(outlier_path)
 dataframes = dict()
 sum = 0
 
-# fill dict with letter as key and filtered dataframe per letter and get the number of all entries
+# fill dict with letter as key and filtered dataframe per letter as value and get the number of all entries
 for letter in alphabet:
     df = df_letters.loc[df_letters.letter == letter, :]
     df = df.drop('letter', axis=1, inplace=False)
@@ -97,7 +97,7 @@ def hyper_parameter_testing(dataframes: dict, extents: list, n_neighbors: list, 
                 # add the percentage of total outliers to the row
                 results[name] = pd.concat(part_result_df)
                 row["sum"] = outliers/amount
-                # avaluation:
+                # evaluation:
                 row["f1"] = f1_score(
                     results[name]["outlier"], results[name]["projection"])
                 row["accuracy"] = accuracy_score(
@@ -114,9 +114,9 @@ def hyper_parameter_testing(dataframes: dict, extents: list, n_neighbors: list, 
 
 
 # parameters to diviate
-extents = [2, 3]  # number of standarddivations, the value has to diviate
+extents = [2, 3]  # number of standard divations the value has to diviate
 n_neighbors = range(10, 20, 2)  # number of neighbors to consider
-# citical Local outlier probability - min value to consider as a outlier
+# citical Local outlier probability/ min value to consider as a outlier
 critical_values = np.arange(0.60, 0.91, 0.05)
 
 # Results
